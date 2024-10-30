@@ -93,3 +93,12 @@ The high level architecture would include:
                                           |         Status)            |
                                           +----------------------------+
 
+
+
+If AWS workspace is being utilised, the High Level ARchitecture would look like:
+
+![HLA_RTTIP_M4](https://github.com/user-attachments/assets/8e9a3639-ff72-498a-9a6a-b97ff5107268)
+
+
+
+
