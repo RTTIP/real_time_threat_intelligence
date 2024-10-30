@@ -39,6 +39,7 @@ The high level architecture would include:
                                                         
                                                         |
                                                         
+                                                        
 +-------------------+              +-------------------+              +---------------------+
 |                   |              |                   |              |                     |
 |    Asset          |              |   Threat          |              |   Crisis Management |
