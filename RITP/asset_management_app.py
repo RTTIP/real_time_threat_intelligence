@@ -1,6 +1,7 @@
 import os
-from datetime import datetime
 
+from datetime import datetime
+from decimal import Decimal
 import openai
 from flask import request, jsonify
 
@@ -178,6 +179,34 @@ def GetAssetRiskById(asset_risk_id):
     else:
         # Return a 404 error if not found
         return jsonify({'error': 'Asset risk not found'}), 404
+
+@app.route('/readThreat',methods=['POST'])
+def readThreat():
+    data=request.get_json()
+    threat_desc=data.get('threat')
+    assetRisk=AssetRisk.query.filter_by(risk_description=threat_desc).first()
+    asset=calculateAssetRisk(assetRisk.asset_id,assetRisk.risk_description)
+    return asset
+
+def calculateAssetRisk(asset_id,risk_description):
+    asset=Assets.query.get(asset_id)
+    percentageIncrease=Decimal(getPercentage(risk_description))
+    adjusted_value=asset.value*(1+percentageIncrease)
+    asset.value=adjusted_value
+    db.session.commit()
+    return jsonify({
+        "assetid":asset.asset_id,
+        "base_value":asset.value / (1 + percentageIncrease),
+        "adjusted_value":adjusted_value
+    })
+
+def getPercentage(risk_description):
+    if risk_description=='Low':
+        return 0.03
+    elif risk_description=='Medium':
+        return 0.07
+    else:
+        return 0.12
 
 with app.app_context():
     db.create_all()
