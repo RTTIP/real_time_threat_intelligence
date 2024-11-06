@@ -38,19 +38,16 @@ class SecurityRiskScanner:
             return {"error": str(e)}
 
     def _parse_response(self, response):
-        """
-        Parse the response from the OpenAI API.
-        
-        Args:
-        - response (openai.Completion): The response object from OpenAI API.
-        
-        Returns:
-        - dict: A dictionary containing the formatted response.
-        """
-        if response and "choices" in response:
-            analysis = response["choices"][0].get("text", "").strip()
-            return {"analysis": analysis}
-        return {"error": "No valid response received from API."}
+    	"""
+    	Parse the response from the OpenAI API (ChatCompletion).
+    	"""
+    	print("Raw response:", response)  # Debugging line to see the raw response
+    	if response and "choices" in response:
+    	    analysis = response["choices"][0].get("message", {}).get("content", "").strip()
+    	    if analysis:
+    	        return {"analysis": analysis}
+    	return {"error": "No valid response or empty content received from API."}
+
 
 
 # Example usage
