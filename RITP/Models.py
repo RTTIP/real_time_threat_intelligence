@@ -23,3 +23,17 @@ class AssetRisk(db.Model):
     threat_level = db.Column(db.String(20))
     last_evaluation = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+class Incident(db.Model):
+    __tablename__ = 'incidents'
+
+    incident_id = db.Column(db.Integer, primary_key=True)  # Primary Key
+    asset_id = db.Column(db.Integer, db.ForeignKey('assets.asset_id', ondelete='CASCADE'),
+                         nullable=False)  # Foreign Key referencing 'assets'
+    date = db.Column(db.DateTime, default=datetime.utcnow)  # Defaults to current timestamp
+    description = db.Column(db.Text, nullable=False)  # Incident description
+    impact_score = db.Column(db.Numeric(5, 2), nullable=False)  # Impact score (0-100 range)
+    resolved = db.Column(db.Boolean, default=False)  # Resolved status (default is False)
+    severity_level = db.Column(db.String(10), nullable=False)  # Severity level (e.g., "High", "Low")
+    incident_type = db.Column(db.String(50), nullable=False)  # Type of incident
+    duration = db.Column(db.Integer)  # Duration of the incident in minutes

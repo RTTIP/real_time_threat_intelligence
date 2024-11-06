@@ -5,8 +5,10 @@ from decimal import Decimal
 import openai
 from flask import request, jsonify
 
-from Models import Assets, AssetRisk
+from Models import Assets, AssetRisk,Incident
 from RITP import app, db
+import pandas as pd
+import joblib
 
 # OpenAI API key setup (set up your own key here)
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -207,6 +209,88 @@ def getPercentage(risk_description):
         return 0.07
     else:
         return 0.12
+
+
+@app.route('/predict_impact', methods=['POST'])
+def predict_impact():
+    # Step 1: Extract incident details from the request
+    data = request.get_json()
+    description = data.get('description')
+    name = data.get('name')
+    severity_level = data.get('severity_level')
+    incident_type = data.get('incident_type')
+    duration = data.get('duration')
+
+    # Step 2: Retrieve the relevant asset based on the incident description
+    asset = Assets.query.filter(Assets.name.ilike(f"%{name}%")).first()
+    if not asset:
+        return jsonify({'error': 'Asset not found for given description'}), 404
+
+    # Retrieve asset risk information for this asset
+    asset_risk = AssetRisk.query.filter_by(asset_id=asset.asset_id).first()
+    if not asset_risk:
+        return jsonify({'error': 'No associated asset risk found for asset'}), 404
+
+    # Calculate days since the last evaluation
+    days_since_evaluation = (datetime.now() - asset_risk.last_evaluation).days
+
+    # Step 3: Prepare features for the model
+    features = {
+        'asset_id': asset.asset_id,
+        'value': asset.value,
+        'criticality': asset.criticality,
+        'risk_score': asset_risk.risk_score,
+        'threat_level': asset_risk.threat_level,
+        'days_since_evaluation': days_since_evaluation
+    }
+
+    # Create DataFrame for the model
+    feature_df = pd.DataFrame([features])
+
+    # One-hot encode the 'criticality' and 'threat_level' columns
+    feature_df = pd.get_dummies(feature_df, columns=['criticality', 'threat_level'], drop_first=True)
+
+    # Step 4: Make the prediction
+    model = joblib.load('C:/Users/cvnik/Desktop/impact_prediction_model.pkl')
+
+    # Ensure the model expects the same feature names
+    feature_df = feature_df.reindex(columns=model.feature_names_in_, fill_value=0)  # fill missing columns with 0
+
+    impact_score = model.predict(feature_df)[0]
+
+    # Step 5: Interpret the impact score into human-readable impact level
+    impact_level = "Minimal"
+    if 21 <= impact_score <= 40:
+        impact_level = "Low"
+    elif 41 <= impact_score <= 60:
+        impact_level = "Medium"
+    elif 61 <= impact_score <= 80:
+        impact_level = "High"
+    elif 81 <= impact_score <= 100:
+        impact_level = "Critical"
+
+    # Step 6: Create new incident with calculated impact score and impact level
+    new_incident = Incident(
+        asset_id=asset.asset_id,
+        description=description,
+        impact_score=float(impact_score),
+        severity_level=impact_level,
+        incident_type=incident_type,
+        duration=duration,
+        resolved=False
+    )
+    db.session.add(new_incident)
+    db.session.commit()
+
+    return jsonify({
+        'incident_id': new_incident.incident_id,
+        'asset_id': asset.asset_id,
+        'impact_score': impact_score,
+        'impact_level': impact_level,
+        'severity_level': severity_level,
+        'incident_type': incident_type,
+        'duration': duration
+    })
 
 with app.app_context():
     db.create_all()
