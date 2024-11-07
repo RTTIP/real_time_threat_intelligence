@@ -1,0 +1,7 @@
+#Make sure to install postgresql in your system before installing these modules
+openai
+Flask
+SQLAlchemy
+Flask-SQLAlchemy
+psycopg2-binary
+psycopg2
