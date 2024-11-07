@@ -1,1 +1,0 @@
-pip install Flask psycopg2-binary SQLAlchemy tensorflow scikit-learn transformers torch requests flask-restful celery flask-bcrypt PyJWT pytest python-dotenv pandas
