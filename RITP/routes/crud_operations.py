@@ -1,19 +1,17 @@
 import os
-
 from datetime import datetime
-from decimal import Decimal
-import openai
-from flask import request, jsonify
 
-from Models import Assets, AssetRisk,Incident
-from RITP import app, db
-import pandas as pd
-import joblib
+import openai
+from flask import request, jsonify, Blueprint
+
+from RITP.Models import Assets, AssetRisk
+from RITP import db
 
 # OpenAI API key setup (set up your own key here)
 openai.api_key = os.getenv("OPENAI_API_KEY")
+crud_bp = Blueprint('crud', __name__)
 
-@app.route('/addAssets',methods=['POST'])
+@crud_bp.route('/addAssets',methods=['POST'])
 def addAssets():
     data =request.get_json()
     name=data.get('name')
@@ -34,7 +32,7 @@ def addAssets():
         db.session.rollback()
         return jsonify({'error':str(e)}),500
 
-@app.route('/addAssetsRisks',methods=['POST'])
+@crud_bp.route('/addAssetsRisks',methods=['POST'])
 def addAssetsRisks():
     data=request.get_json()
     asset_id=data.get('asset_id')
@@ -59,7 +57,7 @@ def addAssetsRisks():
         db.session.rollback()
         return jsonify({'error':str(e)}),500
 
-@app.route('/updateAsset/<int:asset_id>',methods=['PUT'])
+@crud_bp.route('/updateAsset/<int:asset_id>',methods=['PUT'])
 def updateAsset(asset_id):
     data=request.get_json()
     asset=Assets.query.get(asset_id)
@@ -72,7 +70,7 @@ def updateAsset(asset_id):
     db.session.commit()
     return jsonify({'success':'Asset updated succesfully'}),200
 
-@app.route('/updateAssetRisk/<int:asset_riskId>',methods=['PUT'])
+@crud_bp.route('/updateAssetRisk/<int:asset_riskId>',methods=['PUT'])
 def updateAssetRisk(asset_riskId):
     data=request.get_json()
     assetRisk=AssetRisk.query.get(asset_riskId)
@@ -85,7 +83,7 @@ def updateAssetRisk(asset_riskId):
     db.session.commit()
     return jsonify({'success':'Asset risk updated succesfully'}),200
 
-@app.route('/deleteAsset/<int:asset_id>',methods=['DELETE'])
+@crud_bp.route('/deleteAsset/<int:asset_id>',methods=['DELETE'])
 def deleteAsset(asset_id):
     asset=Assets.query.get(asset_id)
 
@@ -100,7 +98,7 @@ def deleteAsset(asset_id):
         db.session.rollback()
         return jsonify({'error':str(e)}),500
 
-@app.route('/deleteAssetRisk/<int:asset_riskId>',methods=['DELETE'])
+@crud_bp.route('/deleteAssetRisk/<int:asset_riskId>',methods=['DELETE'])
 def deleteAssetRisk(asset_riskId):
     assetRisk=AssetRisk.query.get(asset_riskId)
     if not assetRisk:
@@ -113,7 +111,7 @@ def deleteAssetRisk(asset_riskId):
         db.session.rollback()
         return jsonify({'error':str(e)}),500
 
-@app.route('/GetAssets',methods=['GET'])
+@crud_bp.route('/GetAssets',methods=['GET'])
 def getAssets():
     assets=Assets.query.all()
     assets_list = [
@@ -130,7 +128,7 @@ def getAssets():
     ]
     return assets_list
 
-@app.route('/GetAssetRisks',methods=['GET'])
+@crud_bp.route('/GetAssetRisks',methods=['GET'])
 def getAssetRisks():
     assetRisks=AssetRisk.query.all()
     risks_list = [
@@ -146,7 +144,7 @@ def getAssetRisks():
     ]
     return risks_list
 
-@app.route('/GetAssetById/<int:asset_id>',methods=['GET'])
+@crud_bp.route('/GetAssetById/<int:asset_id>',methods=['GET'])
 def getAssetById(asset_id):
     asset=Assets.query.get(asset_id)
     if asset:
@@ -165,7 +163,7 @@ def getAssetById(asset_id):
         return jsonify({'error': 'Asset not found'}), 404
     return asset
 
-@app.route('/GetAssetRiskById/<int:asset_risk_id>',methods=['GET'])
+@crud_bp.route('/GetAssetRiskById/<int:asset_risk_id>',methods=['GET'])
 def GetAssetRiskById(asset_risk_id):
     asset_risk=AssetRisk.query.get(asset_risk_id)
     if asset_risk:
@@ -181,119 +179,3 @@ def GetAssetRiskById(asset_risk_id):
     else:
         # Return a 404 error if not found
         return jsonify({'error': 'Asset risk not found'}), 404
-
-@app.route('/readThreat',methods=['POST'])
-def readThreat():
-    data=request.get_json()
-    threat_desc=data.get('threat')
-    assetRisk=AssetRisk.query.filter_by(risk_description=threat_desc).first()
-    asset=calculateAssetRisk(assetRisk.asset_id,assetRisk.risk_description)
-    return asset
-
-def calculateAssetRisk(asset_id,risk_description):
-    asset=Assets.query.get(asset_id)
-    percentageIncrease=Decimal(getPercentage(risk_description))
-    adjusted_value=asset.value*(1+percentageIncrease)
-    asset.value=adjusted_value
-    db.session.commit()
-    return jsonify({
-        "assetid":asset.asset_id,
-        "base_value":asset.value / (1 + percentageIncrease),
-        "adjusted_value":adjusted_value
-    })
-
-def getPercentage(risk_description):
-    if risk_description=='Low':
-        return 0.03
-    elif risk_description=='Medium':
-        return 0.07
-    else:
-        return 0.12
-
-
-@app.route('/predict_impact', methods=['POST'])
-def predict_impact():
-    # Step 1: Extract incident details from the request
-    data = request.get_json()
-    description = data.get('description')
-    name = data.get('name')
-    severity_level = data.get('severity_level')
-    incident_type = data.get('incident_type')
-    duration = data.get('duration')
-
-    # Step 2: Retrieve the relevant asset based on the incident description
-    asset = Assets.query.filter(Assets.name.ilike(f"%{name}%")).first()
-    if not asset:
-        return jsonify({'error': 'Asset not found for given description'}), 404
-
-    # Retrieve asset risk information for this asset
-    asset_risk = AssetRisk.query.filter_by(asset_id=asset.asset_id).first()
-    if not asset_risk:
-        return jsonify({'error': 'No associated asset risk found for asset'}), 404
-
-    # Calculate days since the last evaluation
-    days_since_evaluation = (datetime.now() - asset_risk.last_evaluation).days
-
-    # Step 3: Prepare features for the model
-    features = {
-        'asset_id': asset.asset_id,
-        'value': asset.value,
-        'criticality': asset.criticality,
-        'risk_score': asset_risk.risk_score,
-        'threat_level': asset_risk.threat_level,
-        'days_since_evaluation': days_since_evaluation
-    }
-
-    # Create DataFrame for the model
-    feature_df = pd.DataFrame([features])
-
-    # One-hot encode the 'criticality' and 'threat_level' columns
-    feature_df = pd.get_dummies(feature_df, columns=['criticality', 'threat_level'], drop_first=True)
-
-    # Step 4: Make the prediction
-    model = joblib.load('C:/Users/cvnik/Desktop/impact_prediction_model.pkl')
-
-    # Ensure the model expects the same feature names
-    feature_df = feature_df.reindex(columns=model.feature_names_in_, fill_value=0)  # fill missing columns with 0
-
-    impact_score = model.predict(feature_df)[0]
-
-    # Step 5: Interpret the impact score into human-readable impact level
-    impact_level = "Minimal"
-    if 21 <= impact_score <= 40:
-        impact_level = "Low"
-    elif 41 <= impact_score <= 60:
-        impact_level = "Medium"
-    elif 61 <= impact_score <= 80:
-        impact_level = "High"
-    elif 81 <= impact_score <= 100:
-        impact_level = "Critical"
-
-    # Step 6: Create new incident with calculated impact score and impact level
-    new_incident = Incident(
-        asset_id=asset.asset_id,
-        description=description,
-        impact_score=float(impact_score),
-        severity_level=impact_level,
-        incident_type=incident_type,
-        duration=duration,
-        resolved=False
-    )
-    db.session.add(new_incident)
-    db.session.commit()
-
-    return jsonify({
-        'incident_id': new_incident.incident_id,
-        'asset_id': asset.asset_id,
-        'impact_score': impact_score,
-        'impact_level': impact_level,
-        'severity_level': severity_level,
-        'incident_type': incident_type,
-        'duration': duration
-    })
-
-with app.app_context():
-    db.create_all()
-
-if __name__ == '__main__':
-    app.run(debug=True)
