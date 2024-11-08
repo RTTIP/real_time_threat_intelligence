@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.threat_controller import ingest_threat, get_threat_by_id, list_threats
+from controllers.threat_controller import ingest_threat, get_threat_by_id, list_threats, classify_threat
 
 
 threat_bp = Blueprint('threat', __name__)
@@ -8,3 +8,5 @@ threat_bp = Blueprint('threat', __name__)
 threat_bp.route("/ingest", methods=["POST"])(ingest_threat)
 threat_bp.route("/<threat_id>", methods=["GET"])(get_threat_by_id)
 threat_bp.route("/", methods=["GET"])(list_threats)
+threat_bp.route("/<threat_id>/classify", methods=["POST"])(classify_threat)
+
