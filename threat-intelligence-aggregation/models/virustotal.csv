@@ -1,0 +1,45 @@
+threat_id,type,severity,description,indicators
+1,malware,1,Malware threat detected.,IP
+2,social engineering,3,Social engineering threat detected.,"Email Address, IP, URL"
+3,malware,2,Malware threat detected.,"Domain, Email Address, File Hash"
+4,social engineering,5,Social engineering threat detected.,"IP, Domain"
+5,phishing,5,Phishing threat detected.,"URL, Email Address, IP"
+6,phishing,3,Phishing threat detected.,"Email Address, File Hash, URL"
+7,malware,5,Malware threat detected.,Email Address
+8,denial-of-service,4,Denial-of-service threat detected.,"URL, File Hash"
+9,phishing,1,Phishing threat detected.,"URL, Domain, IP"
+10,ransomware,3,Ransomware threat detected.,File Hash
+11,denial-of-service,4,Denial-of-service threat detected.,Email Address
+12,social engineering,3,Social engineering threat detected.,"Email Address, URL"
+13,social engineering,4,Social engineering threat detected.,"Email Address, Domain, IP"
+14,ransomware,3,Ransomware threat detected.,"URL, File Hash, IP"
+15,social engineering,5,Social engineering threat detected.,"Domain, Email Address, File Hash"
+16,denial-of-service,2,Denial-of-service threat detected.,"File Hash, IP"
+17,social engineering,1,Social engineering threat detected.,IP
+18,phishing,5,Phishing threat detected.,File Hash
+19,phishing,3,Phishing threat detected.,Email Address
+20,social engineering,4,Social engineering threat detected.,Domain
+21,malware,1,Malware threat detected.,"Domain, URL"
+22,social engineering,1,Social engineering threat detected.,"IP, URL, Domain"
+23,phishing,1,Phishing threat detected.,"URL, File Hash"
+24,denial-of-service,5,Denial-of-service threat detected.,Email Address
+25,malware,2,Malware threat detected.,IP
+26,social engineering,5,Social engineering threat detected.,Domain
+27,phishing,4,Phishing threat detected.,"IP, Email Address, File Hash"
+28,social engineering,1,Social engineering threat detected.,"Email Address, Domain"
+29,ransomware,4,Ransomware threat detected.,"File Hash, URL"
+30,ransomware,4,Ransomware threat detected.,"Email Address, IP, File Hash"
+31,social engineering,3,Social engineering threat detected.,"IP, Domain"
+32,malware,1,Malware threat detected.,Domain
+33,phishing,3,Phishing threat detected.,URL
+34,social engineering,2,Social engineering threat detected.,"IP, Email Address, Domain"
+35,social engineering,4,Social engineering threat detected.,File Hash
+36,ransomware,2,Ransomware threat detected.,"File Hash, IP"
+37,phishing,3,Phishing threat detected.,"Email Address, IP, Domain"
+38,malware,4,Malware threat detected.,Domain
+39,malware,2,Malware threat detected.,"File Hash, URL"
+40,malware,5,Malware threat detected.,"URL, File Hash, Email Address"
+41,ransomware,2,Ransomware threat detected.,"URL, IP"
+42,ransomware,3,Ransomware threat detected.,IP
+43,social engineering,4,Social engineering threat detected.,"Email Address, Domain, File Hash"
+44,social engineering,4,Social engineering threat detected.,
