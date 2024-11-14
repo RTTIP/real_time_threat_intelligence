@@ -16,9 +16,11 @@ def create_app():
     from RITP.routes.crud_operations import crud_bp
     from RITP.routes.predict_impact import predict_bp
     from RITP.routes.read_threat import threat_bp
+    from RITP.routes.llm_integration import llm_bp
     # Route definitions
     app.register_blueprint(crud_bp)
     app.register_blueprint(predict_bp)
     app.register_blueprint(threat_bp)
+    app.register_blueprint(llm_bp)
 
     return app
