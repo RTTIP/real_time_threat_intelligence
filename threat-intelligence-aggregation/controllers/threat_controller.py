@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from models.model_loader import predict_category_and_risk
-from app import mongo
+# from app import mongo
+from config.db import mongo
 
 # POST /api/v1/threats/ingest
 def ingest_threat():

@@ -11,14 +11,16 @@ def fetch_threat_summary(threat_data):
              f"Indicators: {', '.join(threat_data.get('indicators', []))}\n\n" \
              "Explain the impact and recommended actions in simple terms."
 
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=100,
-        temperature=0.7
-    )
-
-    return response['choices'][0]['text'].strip()
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=prompt,
+            max_tokens=100,
+            temperature=0.7
+        )
+        return response['choices'][0]['text'].strip()
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
 
 def preprocess_for_llm(threat_data):
     return {

@@ -9,7 +9,12 @@ CORS(app)
 
 app.config["MONGO_URI"] = "mongodb://localhost:27017/ThreatIntelligenceDB"
 
-initialize_db(app)
+try:
+    initialize_db(app)
+except Exception as e:
+    print(f"Error initializing database: {e}")
+    # Handle logging or graceful shutdown as needed
+
 
 app.register_blueprint(threat_bp, url_prefix='/api/v1/threats')
 
