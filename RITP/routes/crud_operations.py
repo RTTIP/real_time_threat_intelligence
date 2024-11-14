@@ -7,8 +7,6 @@ from flask import request, jsonify, Blueprint
 from RITP.Models import Assets, AssetRisk
 from RITP import db
 
-# OpenAI API key setup (set up your own key here)
-openai.api_key = os.getenv("OPENAI_API_KEY")
 crud_bp = Blueprint('crud', __name__)
 
 @crud_bp.route('/addAssets',methods=['POST'])
