@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from config.db import mongo
-from llm_summary_routes import fetch_threat_summary, preprocess_for_llm
+from LLM.llm_threat_summary import fetch_threat_summary, preprocess_for_llm
 
 summary_bp = Blueprint("summary", __name__)
 

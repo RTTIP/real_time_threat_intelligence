@@ -5,18 +5,21 @@ from config.db import mongo
 
 # POST /api/v1/threats/ingest
 def ingest_threat():
-    data = request.get_json()
-    threat = {
-        "threat_id": data.get("threat_id"),
-        "source": data.get("source"),
-        "type": data.get("type"),
-        "severity": data.get("severity"),
-        "description": data.get("description", ""),
-        "observed_date": data.get("observed_date"),
-        "indicators": data.get("indicators", [])
-    }
-    mongo.db.threats.insert_one(threat)
-    return jsonify({"message": "Threat data ingested successfully"}), 201
+    try:
+        data = request.get_json()  # Retrieves JSON data from the request
+        threat = {
+            "threat_id": data.get("threat_id"),
+            "source": data.get("source"),
+            "type": data.get("type"),
+            "severity": data.get("severity"),
+            "description": data.get("description", ""),
+            "observed_date": data.get("observed_date"),
+            "indicators": data.get("indicators", [])
+        }
+        mongo.db.threats.insert_one(threat)
+        return jsonify({"message": "Threat data ingested successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # GET /api/v1/threats/{threat_id}
 def get_threat_by_id(threat_id):
