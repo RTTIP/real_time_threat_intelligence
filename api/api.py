@@ -1,36 +1,21 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
-from pymongo import MongoClient
-from bson import ObjectId
-from pydantic import BaseModel
-from typing import List, Optional
+from flask import Flask, jsonify, request
+from flask_pymongo import PyMongo
 
-app = FastAPI()
+app = Flask(__name__)
 
 # MongoDB connection details
-client = MongoClient("mongodb+srv://bka2bg:QcqSyZpNSyiH52cU@crisismanagement.vypxy.mongodb.net/Crisis_Management")
-db = client["Crisis_Management"]
-collection = db["crisismanagement"]
+app.config["MONGO_URI"] = "mongodb+srv://bka2bg:QcqSyZpNSyiH52cU@crisismanagement.vypxy.mongodb.net/Crisis_Management"
+mongo = PyMongo(app)
 
-# Define Pydantic model for the document
-class CrisisDocument(BaseModel):
-    title: str
-    severity: str
-    status: str
-    description: str
-    type: str
-    location: Optional[str] = None
-    affected_assets: List[str] = []
-    resolution_time: Optional[int] = None
-
-@app.get("/api/documents")
+@app.route("/api/documents", methods=["GET"])
 def get_documents():
-    documents = list(collection.find())
+    documents = list(mongo.db.crisismanagement.find())
     for doc in documents:
         doc['_id'] = str(doc['_id'])
-    return JSONResponse(content=documents)
+    return jsonify(documents)
 
-@app.post("/api/documents")
-def create_document(document: CrisisDocument):
-    result = collection.insert_one(document.dict())
-    return JSONResponse(content={"id": str(result.inserted_id)})
+@app.route("/api/documents", methods=["POST"])
+def create_document():
+    data = request.get_json()
+    result = mongo.db.crisismanagement.insert_one(data)
+    return jsonify({"id": str(result.inserted_id)}), 201
