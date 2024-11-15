@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_pymongo import PyMongo
 from routes.routes import register_routes
 
