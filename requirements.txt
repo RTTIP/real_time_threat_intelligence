@@ -1,0 +1,3 @@
+Flask
+PySpark
+psycopg2-binary
