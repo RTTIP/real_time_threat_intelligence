@@ -1,31 +1,32 @@
-import openai
-import os
+from transformers import pipeline
+import logging
 
-openai.api_key = "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"
+logging.basicConfig(level=logging.INFO)
+
+# Load the summarization model
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
 
 def fetch_threat_summary(threat_data):
-    # Define the system prompt and user prompt for chat completion
-    system_message = "You are an assistant helping summarize threat data for non-technical users."
-    user_prompt = f"Summarize the following threat data:\n\n" \
-                  f"Threat Type: {threat_data.get('type', 'N/A')}\n" \
-                  f"Severity: {threat_data.get('severity', 'N/A')}\n" \
-                  f"Description: {threat_data.get('description', 'N/A')}\n" \
-                  f"Indicators: {', '.join(threat_data.get('indicators', []))}\n\n" \
-                  "Explain the impact and recommended actions in simple terms."
+    logging.info(f"Input threat data: {threat_data}")
 
+    # Construct the input text from threat data
+    input_text = (
+        f"A cybersecurity threat has been identified:\n"
+        f"Type: {threat_data.get('type', 'Unknown')}\n"
+        f"Severity: {threat_data.get('severity', 'Unknown')}\n"
+        f"Description: {threat_data.get('description', 'No description available')}\n"
+        f"Indicators: {', '.join(threat_data.get('indicators', [])).strip() or 'None'}.\n\n"
+        f"Please summarize this information for non-technical users, including potential impact and recommended actions."
+    )
+    # Generate the summary
     try:
-        response = openai.Completion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_prompt}
-            ],
-            max_tokens=100,
-            temperature=0.7
-        )
-        return response['choices'][0]['message']['content'].strip()
+        summary = summarizer(input_text, max_length=250, min_length=120, do_sample=True, top_k=50, temperature=0.9)
+        logging.info(f"Generated summary: {summary[0]['summary_text']}")
+        return summary[0]['summary_text']
     except Exception as e:
         return f"Error generating summary: {str(e)}"
+
 
 def preprocess_for_llm(threat_data):
     return {
