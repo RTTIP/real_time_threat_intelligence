@@ -1,0 +1,53 @@
+import http.client
+import json
+
+conn = http.client.HTTPConnection("127.0.0.1", 5000)
+payload = json.dumps({
+  "threat_id": "test1",
+  "source": "external",
+  "type": "Malware",
+  "severity": "High",
+  "description": "Suspicious file detected",
+  "observed_date": "2023-11-10",
+  "indicators": [
+    "file.exe",
+    "malicious.com"
+  ]
+})
+headers = {
+  'Content-Type': 'application/json'
+}
+#ingest test 1
+conn.request("POST", "/api/v1/threats/ingest", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
+
+#generate llm summary for test 1
+conn.request("POST", "/api/v1/llm/generate_summary/test1", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
+payload = json.dumps({
+  "threat_id": "test2",
+  "source": "external",
+  "type": "Poor security practice in code",
+  "severity": "High",
+  "description": "Bad coding practices",
+  "observed_date": "2023-11-10",
+  "indicators": [
+    "codercodes.exe",
+    "mistake.com"
+  ]
+})
+#ingest test 2
+conn.request("POST", "/api/v1/threats/ingest", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
+
+#generate llm summary for test 2
+conn.request("POST", "/api/v1/llm/generate_summary/test2", payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data.decode("utf-8"))
