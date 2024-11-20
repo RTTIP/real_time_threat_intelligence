@@ -15,20 +15,29 @@ def readThreat():
 
 def calculateAssetRisk(asset_id, risk_description):
     asset = Assets.query.get(asset_id)
-    percentageIncrease = Decimal(getPercentage(risk_description))
-    adjusted_value = asset.value * (1 + percentageIncrease)
-    asset.value = adjusted_value
+    likelihood = getLikelihood(risk_description)
+    impact = getImpact(risk_description)
+    adjusted_value = asset.value - (likelihood * impact)
+    asset.recalculated_value = adjusted_value
     db.session.commit()
     return jsonify({
         "assetid": asset.asset_id,
-        "base_value": asset.value / (1 + percentageIncrease),
+        "base_value": asset.value,
         "adjusted_value": adjusted_value
     })
 
-def getPercentage(risk_description):
+def getLikelihood(risk_description):
     if risk_description == 'Low':
-        return 0.03
+        return Decimal(0.2)
     elif risk_description == 'Medium':
-        return 0.07
+        return Decimal(0.5)
+    else:  # High
+        return Decimal(0.8)
+
+def getImpact(risk_description):
+    if risk_description == 'Low':
+        return Decimal(10)
+    elif risk_description == 'Medium':
+        return Decimal(50)
     else:
-        return 0.12
+        return Decimal(100)

@@ -6,7 +6,7 @@ db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:nikhilesh@localhost/asset_management_database'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@asset-management.ctorg3eaqid6.us-east-2.rds.amazonaws.com/asset-management'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)  # Initialize the db with the app
 
@@ -30,7 +30,7 @@ def create_app():
             monitor_risks()
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=scheduled_task, trigger="interval", seconds=3)
+    scheduler.add_job(func=scheduled_task, trigger="interval", seconds=60)
     scheduler.start()
 
     return app

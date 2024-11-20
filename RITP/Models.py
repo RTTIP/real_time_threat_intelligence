@@ -11,6 +11,7 @@ class Assets(db.Model):
     criticality=db.Column(db.String(50),nullable=False)
     created_at=db.Column(db.DateTime,default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    recalculated_value=db.Column(db.Integer,default=0)
     risks = db.relationship('AssetRisk', backref='asset', cascade="all, delete-orphan", lazy=True)
 
 class AssetRisk(db.Model):
