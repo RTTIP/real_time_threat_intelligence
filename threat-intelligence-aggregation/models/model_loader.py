@@ -7,12 +7,14 @@ CATEGORY_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'category_model.pk
 RISK_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'risk_model.pkl')
 VECTORIZER_PATH = os.path.join(os.path.dirname(__file__), 'vectorizer.pkl')
 ENCODER_PATH = os.path.join(os.path.dirname(__file__), 'label_encoder.pkl')
+PREDICTIVE_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'predictive_model.pkl')
 
 # Load models and encoders
 category_model = joblib.load(CATEGORY_MODEL_PATH)
 risk_model = joblib.load(RISK_MODEL_PATH)
 vectorizer = joblib.load(VECTORIZER_PATH)
 label_encoder = joblib.load(ENCODER_PATH)
+predictive_model = joblib.load(PREDICTIVE_MODEL_PATH)
 
 def predict_category_and_risk(threat_data):
     # Process features
@@ -30,3 +32,9 @@ def predict_category_and_risk(threat_data):
     # Decode category label
     category_label = label_encoder.inverse_transform([category])[0]
     return category_label, risk_score
+
+def predict_future_threat(features):
+    
+    feature_array = np.array([features['severity'], features['num_indicators']]).reshape(1, -1)
+    prediction = predictive_model.predict(feature_array)
+    return prediction[0]
