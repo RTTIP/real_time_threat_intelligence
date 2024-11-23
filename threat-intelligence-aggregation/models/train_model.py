@@ -8,7 +8,7 @@ import numpy as np
 import joblib
 
 # Load preprocessed threat data
-data = pd.read_csv('historical_threat_data.csv')
+data = pd.read_csv('virustotal.csv')
 
 # 1. Process 'description' text data with TF-IDF
 vectorizer = TfidfVectorizer(max_features=500)
