@@ -16,7 +16,5 @@ def trigger_incident_response(asset, risk):
 
 @incident_bp.route('/initiate_monitoring', methods=['GET'])
 def initiate_monitoring():
-    # Use app context to call monitor_risks directly
-
-    monitor_risks()  # Trigger the function immediately for manual testing
+    monitor_risks()
     return jsonify({"status": "Monitoring started"}), 200
