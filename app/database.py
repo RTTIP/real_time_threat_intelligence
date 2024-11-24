@@ -562,3 +562,24 @@ def generate_playbook(incident):
     )
     return playbook
 
+# Mock generator function for demonstration
+def generator(prompt, max_length=100, num_return_sequences=1, truncation=True, no_repeat_ngram_size=2, pad_token_id=50256):
+    # Simulated AI response for testing
+    return [{"generated_text": f"Generated Message:\n    Incident ID: 12345\n    Business Continuity Plan: Ensure operational capacity through backup systems.\n    Impact Summary: Service disruption for 2 hours.\n    Generate a message for all employees and key stakeholders, explaining the incident's impact on business operations, the measures in place to ensure continuity, and any adjustments required.\n"}]
+
+# Function to generate the business continuity message
+def generate_business_continuity_message(business_continuity_data):
+    prompt = f"""
+    Incident ID: {business_continuity_data['incident_id']}
+    Business Continuity Plan: {business_continuity_data['continuity_plan']}
+    Impact Summary: {business_continuity_data['impact_summary']}
+    
+    Generate a message for all employees and key stakeholders, explaining the incident's impact on business operations, the measures in place to ensure continuity, and any adjustments required.
+    """
+    response = generator(prompt, max_length=100, num_return_sequences=1, truncation=True, no_repeat_ngram_size=2, pad_token_id=50256)
+    # Split the generated message by newlines and remove empty lines
+    message_lines = response[0]["generated_text"].split("\n")
+    clean_lines = [line.strip() for line in message_lines if line.strip()]  # Remove empty and extra spaces
+    return clean_lines
+
+

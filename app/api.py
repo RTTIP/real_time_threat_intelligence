@@ -6,7 +6,7 @@ from app.database import (
     insert_crisis_communication, get_crisis_communications, update_crisis_communication, delete_crisis_communication,
     insert_incident_log, get_incident_logs, update_incident_log, delete_incident_log,get_related_playbook, get_recovery_actions_for_incident, 
                           get_crisis_communications_for_incident, get_logs_for_incident,
-                          update_incident_status,get_incident_by_id,generate_playbook,get_incident_by_id
+                          update_incident_status,get_incident_by_id,generate_playbook,get_incident_by_id,generate_business_continuity_message
 )
 
 app = Flask(__name__)
@@ -274,6 +274,18 @@ def recover_incident(incident_id):
 
     return jsonify({"message": "Incident is already resolved."}), 200
 
-
-
+# API endpoint for generating messages
+@app.route('/generate-business-continuity-message', methods=['POST'])
+def generate_message():
+    try:
+        # Extract data from the request body
+        business_continuity_data = request.json
+        if not business_continuity_data:
+            return jsonify({"error": "No business continuity data provided"}), 400
+        
+        # Generate message
+        generated_message_lines = generate_business_continuity_message(business_continuity_data)
+        return jsonify({"message": generated_message_lines})  # Return as a list of lines
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
