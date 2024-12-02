@@ -4,3 +4,7 @@ fastapi==0.68.1
 requests==2.26.0
 pydantic==1.8.2
 uvicorn==0.15.0
+Flask-Cors==3.0.10
+Werkzeug==2.0.3
+transformers==4.34.0 
+torch==2.0.1
