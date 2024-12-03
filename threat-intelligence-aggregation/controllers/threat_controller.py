@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from models.model_loader import predict_category_and_risk, predict_future_threat
-#from llm.llm_threat_summary import fetch_threat_summary, preprocess_for_llm
+from llm.llm_threat_summary import fetch_threat_summary, preprocess_for_llm
 from app import mongo
 
 # POST /api/v1/threats/ingest
@@ -50,25 +50,25 @@ def classify_threat(threat_id):
             {"$set": {"classification": {"category": category, "risk_score": risk_score}}}
         )
         
-        return jsonify({"threat_id": threat_id, "category": category, "risk_score": risk_score}), 200
+        return jsonify({"threat_id": threat_id, "risk_score": risk_score}), 200
     else:
         return jsonify({"error": "Threat not found"}), 404
     
 
-# def generate_summary(threat_id):
-#     threat = mongo.db.threats.find_one({"threat_id": threat_id})
-#     if not threat:
-#         return jsonify({"error": "Threat not found"}), 404
+def generate_summary(threat_id):
+    threat = mongo.db.threats.find_one({"threat_id": threat_id})
+    if not threat:
+        return jsonify({"error": "Threat not found"}), 404
 
-#     preprocessed_data = preprocess_for_llm(threat)
-#     summary = fetch_threat_summary(preprocessed_data)
+    preprocessed_data = preprocess_for_llm(threat)
+    summary = fetch_threat_summary(preprocessed_data)
 
-#     mongo.db.threats.update_one(
-#         {"threat_id": threat_id},
-#         {"$set": {"llm_summary": summary}}
-#     )
+    mongo.db.threats.update_one(
+        {"threat_id": threat_id},
+        {"$set": {"llm_summary": summary}}
+    )
 
-#     return jsonify({"threat_id": threat_id, "summary": summary}), 200
+    return jsonify({"threat_id": threat_id, "summary": summary}), 200
 
 
 
@@ -87,4 +87,4 @@ def predict_threat():
 
     # Get prediction
     prediction = predict_future_threat(features)
-    return jsonify({"predicted_severity": prediction}), 200
+    return jsonify({"predicted_impact": prediction}), 200
