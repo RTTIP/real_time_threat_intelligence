@@ -1,4 +1,7 @@
 from flask import Flask, request, jsonify
+from transformers import pipeline
+import logging
+import psycopg2 
 from app.database import (
     insert_incident, get_incidents, update_incident, delete_incident,
     insert_playbook, get_playbooks, update_playbook, delete_playbook,
@@ -208,8 +211,7 @@ def remove_incident_log(id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002)
+
 
 #-----------------------------------------------------------------------#
 
@@ -289,3 +291,226 @@ def generate_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+def fetch_incident_data(incident_id):
+    """Fetch incident data from the database."""
+    try:
+        conn = psycopg2.connect(
+            host="db-1.c5o4k2em6pvs.us-east-1.rds.amazonaws.com",
+            port='5432',
+            dbname='postgres',
+            user='postgres',
+            password='postgres123',
+        )
+        cur = conn.cursor()
+        query = """
+        SELECT incident_id, type, asset_affected
+        FROM incidents
+        WHERE incident_id = %s;
+        """
+        cur.execute(query, (incident_id,))
+        result = cur.fetchone()
+        if result:
+            incident_data = {
+                "incident_id": result[0],
+                "incident_type": result[1],
+                "affected_systems": result[2].split(",")  # Assuming `asset_affected` is a comma-separated string
+            }
+            return incident_data
+        else:
+            logging.info(f"No data found for Incident ID {incident_id}.")
+            return None
+    except Exception as e:
+        logging.error(f"Error connecting to the database: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+
+# Generate Incident Prompts 
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn", device=-1)  # Use CPU
+
+
+def generate_prompt_with_incident_data(incident_data):
+    """Generate the prompt for the summarizer."""
+    return f"""
+    type: {incident_data['incident_type']}
+    asset_affected: {', '.join(incident_data['affected_systems'])}
+
+    Provide a concise summary of the incident type and its impact on the affected assets.
+    Include recommendations for mitigating any potential issues and restoring operations.
+    """
+
+
+def summarize_incident(incident_data):
+    """Generate a summary based on the incident data."""
+    prompt = generate_prompt_with_incident_data(incident_data)
+    try:
+        summary = summarizer(prompt, max_length=200, min_length=80, do_sample=True, top_k=50, temperature=0.9)
+        logging.info(f"Generated summary: {summary[0]['summary_text']}")
+        return summary[0]['summary_text']
+    except Exception as e:
+        logging.error(f"Error generating summary: {e}")
+        return f"Error generating summary: {str(e)}"
+
+
+@app.route('/api/incidents/generate-summary', methods=['POST'])
+def generate_incident_summary():
+    """API endpoint to generate an incident summary."""
+    try:
+        # Extract data from request
+        data = request.json
+        incident_id = data.get('incident_id')
+        
+        if not incident_id:
+            return jsonify({
+                "status": "error",
+                "message": "Incident ID is required."
+            }), 400
+        
+        logging.info(f"Fetching data for incident ID: {incident_id}")
+        incident_data = fetch_incident_data(incident_id)
+
+        if incident_data:
+            logging.info(f"Fetched Incident Data: {incident_data}")
+            summary = summarize_incident(incident_data)
+            return jsonify({
+                "status": "success",
+                "message": "Summary generated successfully.",
+                "data": {
+                    "incident_id": incident_data['incident_id'],
+                    "summary": summary
+                }
+            }), 200
+        else:
+            logging.error(f"Incident data not found for ID: {incident_id}")
+            return jsonify({
+                "status": "error",
+                "message": "Incident data not found."
+            }), 404
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}", exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": "An unexpected error occurred while processing the request. Please try again later."
+        }), 500
+
+#Generate Playbook prompts
+
+# Initialize the summarizer with explicit device configuration
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn", device=-1)  # Use CPU
+
+
+def fetch_playbook_data(incident_id):
+    """Fetch incident data along with continuity plan and impact summary from the database."""
+    try:
+        conn = psycopg2.connect(
+            host="db-1.c5o4k2em6pvs.us-east-1.rds.amazonaws.com",
+            port='5432',
+            dbname='postgres',
+            user='postgres',
+            password='postgres123',
+        )
+        cur = conn.cursor()
+        query = """
+        SELECT p.incident_id, p.continuity_plan, i.details
+        FROM playbooks p
+        JOIN incident_logs i
+        ON i.incident_id = p.incident_id
+        WHERE p.incident_id = %s;
+        """
+        cur.execute(query, (incident_id,))
+        result = cur.fetchone()
+        if result:
+            incident_data = {
+                "incident_id": result[0],
+                "continuity_plan": result[1],
+                "impact_summary": result[2],  # Renamed from incident_details
+            }
+            return incident_data
+        else:
+            logging.info(f"No data found for Incident ID {incident_id}.")
+            return None
+    except Exception as e:
+        logging.error(f"Error connecting to the database: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def generate_prompt_with_plan(incident_data):
+    """Generate the prompt for the summarizer with continuity plan and impact summary."""
+    return f"""
+    Incident ID: {incident_data['incident_id']}
+    Business Continuity Plan: {incident_data['continuity_plan']}
+    Impact Summary: {incident_data['impact_summary']}
+
+    Generate a message for all employees and key stakeholders, explaining the incident's impact on business operations, the measures in place to ensure continuity, and any changes or instructions they should follow.
+    """
+
+
+def summarize_incident_with_plan(incident_data):
+    """Generate a summary based on the incident data."""
+    prompt = generate_prompt_with_plan(incident_data)
+    try:
+        summary = summarizer(prompt, max_length=250, min_length=120, do_sample=True, top_k=50, temperature=0.9)
+        logging.info(f"Generated summary: {summary[0]['summary_text']}")
+        return summary[0]['summary_text']
+    except Exception as e:
+        logging.error(f"Error generating summary: {e}")
+        return f"Error generating summary: {str(e)}"
+
+
+@app.route('/api/crisis-management/generate-stakeholder-message', methods=['POST'])
+def generate_stakeholder_message():
+    """API endpoint to generate stakeholder communication message."""
+    try:
+        # Extract data from request
+        data = request.json
+        incident_id = data.get('incident_id')
+        
+        if not incident_id:
+            return jsonify({
+                "status": "error",
+                "message": "Incident ID is required."
+            }), 400
+        
+        logging.info(f"Fetching data for incident ID: {incident_id}")
+        incident_data = fetch_playbook_data(incident_id)
+
+        if incident_data:
+            logging.info(f"Fetched Incident Data: {incident_data}")
+            summary = summarize_incident_with_plan(incident_data)
+            return jsonify({
+                "status": "success",
+                "message": "Message generated and processed successfully.",
+                "data": {
+                    "incident_id": incident_data['incident_id'],
+                    "summary": summary
+                }
+            }), 200
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Incident data not found."
+            }), 404
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return jsonify({
+            "status": "error",
+            "message": "An unexpected error occurred while processing the request. Please try again later."
+        }), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5002)
